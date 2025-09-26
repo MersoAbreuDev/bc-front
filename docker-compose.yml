@@ -1,5 +1,4 @@
 version: "3.9"
-
 services:
   app:
     build: .
@@ -8,8 +7,4 @@ services:
       - NODE_ENV=production
       - PORT=8080
       - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
-    ports:
-      - "8080:8080"
     restart: unless-stopped
-
-
