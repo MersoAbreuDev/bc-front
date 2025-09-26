@@ -1,6 +1,9 @@
+# Build stage
 FROM node:20-slim AS builder
 
 WORKDIR /app
+ENV NODE_ENV=development
+
 RUN corepack enable && corepack prepare pnpm@10.14.0 --activate
 
 COPY pnpm-lock.yaml package.json ./
@@ -8,7 +11,9 @@ RUN pnpm install --frozen-lockfile --prefer-offline
 
 COPY . .
 RUN pnpm build
+RUN pnpm prune --prod
 
+# Production stage
 FROM node:20-slim AS runner
 
 WORKDIR /app
