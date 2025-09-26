@@ -5,6 +5,7 @@ import * as ProdutosService from "@/services/produtos";
 import { Trash2 } from "lucide-react";
 import { listCategories } from "@/services/categoria";
 import { listComandas } from "@/services/comanda";
+import { toast } from "sonner";
 
 export default function ProdutosPage() {
   const [items, setItems] = useState<Array<any>>([]);
@@ -21,37 +22,44 @@ export default function ProdutosPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const list = await ProdutosService.listProducts();
-      const cats = await listCategories();
+      const [prodsRes, catsRes, comRes] = await Promise.allSettled([
+        ProdutosService.listProducts(),
+        listCategories(),
+        listComandas(),
+      ]);
+
+      const list = prodsRes.status === "fulfilled" ? (prodsRes.value || []) : [];
+      if (prodsRes.status === "rejected") toast.error(prodsRes.reason?.message || "Falha ao listar produtos");
       setItems(list);
+      setPage(1);
+
+      const cats = catsRes.status === "fulfilled" ? (catsRes.value || []) : [];
+      if (catsRes.status === "rejected") toast.warning(catsRes.reason?.message || "Falha ao listar categorias");
       setCategories(cats);
 
       // compute stats
       const total = list.length;
       const active = list.filter((p) => p.active !== false).length;
 
-      // compute most sold from comandas
-      const comandas = await listComandas();
-      const salesMap: Record<string, number> = {};
-      comandas.forEach((c) => c.items.forEach((it: any) => { salesMap[it.productId] = (salesMap[it.productId] || 0) + (it.qty || 0); }));
+      // compute most sold from comandas (se disponível)
       let top: null | { name: string; qty: number } = null;
-      Object.keys(salesMap).forEach((pid) => {
-        const qty = salesMap[pid];
-        const prod = list.find((x: any) => x.id === pid);
-        const name = prod ? prod.name : pid;
-        if (!top || qty > top.qty) top = { name, qty };
-      });
+      if (comRes.status === "fulfilled") {
+        const comandas = comRes.value || [];
+        const salesMap: Record<string, number> = {};
+        comandas.forEach((c: any) => c.items.forEach((it: any) => { salesMap[it.productId] = (salesMap[it.productId] || 0) + (it.qty || 0); }));
+        Object.keys(salesMap).forEach((pid) => {
+          const qty = salesMap[pid];
+          const prod = list.find((x: any) => x.id === pid);
+          const name = prod ? prod.name : pid;
+          if (!top || qty > top.qty) top = { name, qty };
+        });
+      }
 
       setStats({ total, active, topProduct: top });
 
-    } catch (e) {
-      setItems([
-        { id: "p1", name: "Coca-Cola 350ml", price: 6.5, active: true },
-        { id: "p2", name: "Porção de Batata", price: 18.0, active: true },
-      ]);
-      setCategories([]);
-      setStats({ total: 2, active: 2, topProduct: null });
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (id: string) => {

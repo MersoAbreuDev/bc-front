@@ -18,6 +18,7 @@ export default function AbrirComanda() {
 
   // products
   const [products, setProducts] = useState<any[]>([]);
+  const [productsLoading, setProductsLoading] = useState<boolean>(true);
   const [productId, setProductId] = useState("");
   const [qty, setQty] = useState<number>(1);
   const [price, setPrice] = useState<number>(0);
@@ -55,15 +56,25 @@ export default function AbrirComanda() {
   useEffect(() => {
     // load products once
     (async () => {
-      const prods = await ProdutosService.listProducts();
-      setProducts(prods);
-      if (prods[0]) {
-        setTempProductId(prods[0].id);
-        setTempPrice(prods[0].price || 0);
-        if (!productId) {
-          setProductId(prods[0].id);
-          setPrice(prods[0].price || 0);
+      try {
+        setProductsLoading(true);
+        const prods = await ProdutosService.listProducts();
+        setProducts(prods || []);
+        if (prods && prods.length > 0) {
+          setTempProductId(prods[0].id);
+          setTempPrice(Number(prods[0].price || 0));
+          if (!productId) {
+            setProductId(prods[0].id);
+            setPrice(Number(prods[0].price || 0));
+          }
+        } else {
+          toast.info("Nenhum produto encontrado neste tenant.");
         }
+      } catch (e: any) {
+        toast.error(e?.message || "Falha ao carregar produtos");
+        setProducts([]);
+      } finally {
+        setProductsLoading(false);
       }
     })();
   }, []);
@@ -73,6 +84,27 @@ export default function AbrirComanda() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
+
+  // Garantir seleção e preço válidos quando os produtos carregarem/trocarem
+  useEffect(() => {
+    if ((products || []).length > 0) {
+      if (!tempProductId || !products.find((p) => p.id === tempProductId)) {
+        setTempProductId(products[0].id);
+        setTempPrice(Number(products[0].price || 0));
+      }
+      if (!productId || !products.find((p) => p.id === productId)) {
+        setProductId(products[0].id);
+        setPrice(Number(products[0].price || 0));
+      }
+    }
+  }, [products]);
+
+  // Atualiza preço ao trocar productId
+  useEffect(() => {
+    if (!productId) return;
+    const prod = products.find((p) => p.id === productId);
+    if (prod) setPrice(Number(prod.price || 0));
+  }, [productId, products]);
 
   useEffect(() => {
     // gera um id lógico para a comanda em edição (antes de salvar)
@@ -256,11 +288,16 @@ export default function AbrirComanda() {
                     <div>
                       <Label>Produto</Label>
                       <select
-                        value={tempProductId}
-                        onChange={(e) => { setTempProductId(e.target.value); const prod = products.find((p)=>p.id===e.target.value); setTempPrice(prod?.price||0); }}
+                        value={tempProductId && products.find(p=>p.id===tempProductId) ? tempProductId : (products[0]?.id || "")}
+                        onChange={(e) => { setTempProductId(e.target.value); const prod = products.find((p)=>p.id===e.target.value); setTempPrice(Number(prod?.price||0)); }}
                         className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base"
+                        disabled={productsLoading || products.length === 0}
                       >
-                        {products.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
+                        {products.length === 0 ? (
+                          <option value="" disabled>Nenhum produto</option>
+                        ) : (
+                          products.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))
+                        )}
                       </select>
                     </div>
                     <div>
@@ -352,11 +389,16 @@ export default function AbrirComanda() {
                   <div>
                     <Label>Produto</Label>
                     <select
-                      value={productId}
-                      onChange={(e) => { setProductId(e.target.value); const prod = products.find((p) => p.id === e.target.value); setPrice(prod?.price || 0); }}
+                      value={productId && products.find(p=>p.id===productId) ? productId : (products[0]?.id || "")}
+                      onChange={(e) => { setProductId(e.target.value); const prod = products.find((p) => p.id === e.target.value); setPrice(Number(prod?.price || 0)); }}
                       className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base"
+                      disabled={productsLoading || products.length === 0}
                     >
-                      {products.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
+                      {products.length === 0 ? (
+                        <option value="" disabled>Nenhum produto</option>
+                      ) : (
+                        products.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))
+                      )}
                     </select>
                   </div>
                   <div>
