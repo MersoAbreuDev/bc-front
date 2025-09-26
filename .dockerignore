@@ -35,7 +35,7 @@ data
 .env
 load-ids.txt
 
-server
+!server/**
 tmp
 types
 .git
