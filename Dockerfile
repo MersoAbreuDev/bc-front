@@ -8,9 +8,12 @@ WORKDIR /app
 # Enable corepack and pnpm
 RUN corepack enable && corepack prepare pnpm@10.14.0 --activate
 
+# esbuild/vite em Alpine: garantir compatibilidade glibc
+RUN apk add --no-cache libc6-compat
+
 # Install deps first (better caching)
 COPY pnpm-lock.yaml package.json ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --prefer-offline
 
 # Copy source and build
 COPY . .
