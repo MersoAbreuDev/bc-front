@@ -4,7 +4,7 @@ import path from "path";
 // import only in dev using dynamic require inside plugin to avoid build resolution
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ command, mode }) => ({
   server: {
     host: "::",
     port: 8080,
@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: "dist/spa",
   },
-  plugins: [react(), expressPlugin()],
+  plugins: command === "serve" ? [react(), expressDevPlugin()] : [react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./client"),
@@ -29,18 +29,18 @@ export default defineConfig(({ mode }) => ({
   },
 }));
 
-function expressPlugin(): Plugin {
+function expressDevPlugin(): Plugin {
   return {
     name: "express-plugin",
     apply: "serve", // Only apply during development (serve mode)
     configureServer(server) {
-      // lazy import to avoid resolution during build
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { createServer } = require("./server");
-      const app = createServer();
-
-      // Add Express app as middleware to Vite dev server
-      server.middlewares.use(app);
+      // Lazy import to avoid resolution during build
+      import("./server/index.ts").then(({ createServer }) => {
+        const app = createServer();
+        server.middlewares.use(app);
+      }).catch(() => {
+        // Fallback: no-op if server code missing in dev container
+      });
     },
   };
 }
