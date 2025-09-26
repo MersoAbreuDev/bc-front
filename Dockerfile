@@ -1,39 +1,24 @@
-# Multi-stage build for Fusion Starter (Vite + Express)
-
 FROM node:20-slim AS builder
 
-ENV NODE_ENV=development \
-    NODE_OPTIONS=--max-old-space-size=2048
 WORKDIR /app
-
-# Enable corepack and pnpm
 RUN corepack enable && corepack prepare pnpm@10.14.0 --activate
 
-# Install deps first (better caching)
 COPY pnpm-lock.yaml package.json ./
 RUN pnpm install --frozen-lockfile --prefer-offline
 
-# Copy source and build
 COPY . .
 RUN pnpm build
 
-# Reduce to production deps only
-RUN pnpm prune --prod
-
-
 FROM node:20-slim AS runner
 
-ENV NODE_ENV=production \
-    PORT=8080
 WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=8080
 
-# Copy production node_modules and built assets
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/server ./server
 
 EXPOSE 8080
-
-CMD ["node", "dist/server/node-build.mjs"]
-
-
+CMD ["node", "server/node-build.js"]
