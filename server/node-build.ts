@@ -2,11 +2,13 @@ import { createServer } from "./index";
 import express from "express";
 import path from "path";
 
-const app = createServer?.() || express();
+const app = createServer();
 
-app.use(express.static(path.resolve("dist/spa")));
+const spaPath = path.resolve(process.cwd(), "dist/spa");
+app.use(express.static(spaPath));
+
 app.get("*", (req, res) => {
-  res.sendFile(path.resolve("dist/spa/index.html"));
+  res.sendFile(path.join(spaPath, "index.html"));
 });
 
 const port = Number(process.env.PORT || 8080);
