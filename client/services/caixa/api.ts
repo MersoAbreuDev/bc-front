@@ -192,7 +192,7 @@ export async function registerMovementRemote(params: { type: BackendCashMovement
 export async function listMovementsRemote(cashId: string): Promise<{ success: boolean; data?: BackendCashMovement[]; message?: string }>{
   const user = getCurrentUser();
   if (!user?.token) return { success: false, message: "Usuário não autenticado" };
-  const res = await apiGet<BackendCashMovement[]>(`/cash/${cashId}/movements`);
+  const res = await apiGet<BackendCashMovement[]>(`/cash/${cashId.replace(/:/g, "")}/movements`);
   if (!res.ok) return { success: false, message: res.message };
   return { success: true, data: (res.data as any) ?? [] };
 }
@@ -200,7 +200,7 @@ export async function listMovementsRemote(cashId: string): Promise<{ success: bo
 export async function getSalesTotalsRemote(cashId: string): Promise<{ success: boolean; data?: BackendPaymentTotals; message?: string }>{
   const user = getCurrentUser();
   if (!user?.token) return { success: false, message: "Usuário não autenticado" };
-  const res = await apiGet<BackendPaymentTotals>(`/cash/${cashId}/sales-totals`);
+  const res = await apiGet<BackendPaymentTotals>(`/cash/${cashId.replace(/:/g, "")}/sales-totals`);
   if (!res.ok) return { success: false, message: res.message };
   return { success: true, data: (res.data as any) ?? {} };
 }
@@ -208,7 +208,7 @@ export async function getSalesTotalsRemote(cashId: string): Promise<{ success: b
 export async function getCashSummaryRemote(cashId: string): Promise<{ success: boolean; data?: { salesCount: number; salesTotal: string; byPayment: Record<string, string> }; message?: string }>{
   const user = getCurrentUser();
   if (!user?.token) return { success: false, message: "Usuário não autenticado" };
-  const res = await apiGet<{ salesCount: number; salesTotal: string; byPayment: Record<string, string> }>(`/dashboard/cash/${encodeURIComponent(cashId)}/summary`);
+  const res = await apiGet<{ salesCount: number; salesTotal: string; byPayment: Record<string, string> }>(`/dashboard/cash/${encodeURIComponent(cashId.replace(/:/g, ""))}/summary`);
   if (!res.ok) return { success: false, message: res.message };
   return { success: true, data: res.data as any };
 }
