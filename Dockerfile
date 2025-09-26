@@ -1,15 +1,13 @@
 # Multi-stage build for Fusion Starter (Vite + Express)
 
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
-ENV NODE_ENV=development
+ENV NODE_ENV=development \
+    NODE_OPTIONS=--max-old-space-size=2048
 WORKDIR /app
 
 # Enable corepack and pnpm
 RUN corepack enable && corepack prepare pnpm@10.14.0 --activate
-
-# esbuild/vite em Alpine: garantir compatibilidade glibc
-RUN apk add --no-cache libc6-compat
 
 # Install deps first (better caching)
 COPY pnpm-lock.yaml package.json ./
@@ -23,7 +21,7 @@ RUN pnpm build
 RUN pnpm prune --prod
 
 
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 
 ENV NODE_ENV=production \
     PORT=8080
