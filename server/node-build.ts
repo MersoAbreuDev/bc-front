@@ -7,7 +7,7 @@ const app = createServer();
 const spaPath = path.resolve(process.cwd(), "dist/spa");
 app.use(express.static(spaPath));
 
-app.get("/*", (req, res) => {
+app.get("/^\/(?!api).*/", (req, res) => {
   res.sendFile(path.join(spaPath, "index.html"));
 });
 
