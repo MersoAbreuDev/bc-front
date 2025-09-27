@@ -7,8 +7,12 @@ const app = createServer();
 const spaPath = path.resolve(process.cwd(), "dist/spa");
 app.use(express.static(spaPath));
 
-app.get("/^\/(?!api).*/", (req, res) => {
-  res.sendFile(path.join(spaPath, "index.html"));
+app.use((req, res, next) => {
+  if (!req.path.startsWith("/api") && req.method === "GET") {
+    res.sendFile(path.join(spaPath, "index.html"));
+  } else {
+    next();
+  }
 });
 
 const port = Number(process.env.PORT || 8080);
