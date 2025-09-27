@@ -5,8 +5,8 @@ const AUTH_KEY = "bcomandas:auth";
 function onlyDigits(v: string) { return (v||"").replace(/\D+/g,""); }
 
 function getApiBase(): string {
-  const base = (import.meta as any)?.env?.VITE_API_URL || "http://localhost:3000";
-  return String(base || "http://localhost:3000").replace(/\/$/, "");
+  const base = import.meta.env.VITE_API_URL || "http://localhost:3000"
+  return base.replace(/\/$/, "")
 }
 
 export async function login(payload: LoginRequest): Promise<LoginResponse> {
