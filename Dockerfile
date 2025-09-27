@@ -1,8 +1,10 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 ENV NODE_ENV=development
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 
 RUN corepack enable && corepack prepare pnpm@10.14.0 --activate
 
@@ -14,7 +16,7 @@ RUN pnpm build
 RUN pnpm prune --prod
 
 # Production stage
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production
