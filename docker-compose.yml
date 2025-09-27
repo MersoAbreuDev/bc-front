@@ -3,10 +3,6 @@ services:
   app:
     build: .
     container_name: bcomandas-app
-    environment:
-      - NODE_ENV=production
-      - PORT=8080
-      - VITE_API_URL=${VITE_API_URL:-https://bcomandas.com.br}
     ports:
       - "8080:8080"
     restart: unless-stopped
