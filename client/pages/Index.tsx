@@ -107,7 +107,7 @@ export default function Index() {
                         <FormLabel>CPF, CNPJ ou email</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Digite seu seil, cnpj ou cpf"
+                            placeholder="Digite seu email, cnpj ou cpf"
                             value={docType === "email" ? field.value : formatDocumentByType(docType, field.value)}
                             onChange={(e) => {
                               const raw = e.target.value;
