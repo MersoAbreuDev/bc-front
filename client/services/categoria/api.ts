@@ -3,8 +3,8 @@ export interface Categoria { id: string; name: string; active?: boolean }
 import { getCurrentUser } from "@/services/auth/api";
 
 function getApiBase(): string {
-  const base = (import.meta as any)?.env?.VITE_API_URL || "http://localhost:3000";
-  return String(base || "http://localhost:3000").replace(/\/$/, "");
+  const base = (import.meta as any)?.env?.VITE_API_URL || "http://localhost:5337";
+  return String(base || "http://localhost:5337").replace(/\/$/, "");
 }
 
 function getTenantId(): string | undefined {

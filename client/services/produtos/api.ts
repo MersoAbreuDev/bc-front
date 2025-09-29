@@ -10,8 +10,8 @@ export interface Produto {
 import { getCurrentUser } from "@/services/auth/api";
 
 function getApiBase(): string {
-  const base = (import.meta as any)?.env?.VITE_API_URL || "http://localhost:3000";
-  return String(base || "http://localhost:3000").replace(/\/$/, "");
+  const base = (import.meta as any)?.env?.VITE_API_URL || "http://localhost:5337";
+  return String(base || "http://localhost:5337").replace(/\/$/, "");
 }
 
 function getTenantId(): string | undefined {
@@ -78,18 +78,56 @@ async function apiSend<T = any>(path: string, method: "POST" | "PATCH" | "DELETE
 
 function mapBackendToProduto(p: any): Produto {
   return {
-    id: p?.id,
+    id: p?.id || p?._id || p?.uuid || p?.productId,
     name: p?.name,
     brand: p?.brand,
     price: Number(p?.price || 0),
-    categoryId: p?.category?.id || p?.categoryId,
+    categoryId: p?.category?.id || p?.categoryId || (typeof p?.category === "string" ? p.category : undefined),
   } as Produto;
 }
 
 export async function listProducts(): Promise<Produto[]> {
-  const res = await apiGet<any[]>(`/products`);
+  const res = await apiGet<any>(`/products`);
   if (!res.ok) throw new Error(res.message || "Falha ao listar produtos");
-  const list = Array.isArray(res.data) ? res.data : [];
+  const raw = res.data as any;
+  let list = Array.isArray(raw)
+    ? raw
+    : Array.isArray(raw?.items)
+      ? raw.items
+      : Array.isArray(raw?.data)
+        ? raw.data
+        : Array.isArray(raw?.data?.items)
+          ? raw.data.items
+          : Array.isArray(raw?.result)
+            ? raw.result
+            : Array.isArray(raw?.records)
+              ? raw.records
+              : Array.isArray(raw?.rows)
+                ? raw.rows
+                : Array.isArray(raw?.content)
+                  ? raw.content
+                  : Array.isArray(raw?.products)
+                    ? raw.products
+                    : [];
+
+  // Fallback genérico: busca o primeiro array em qualquer nível
+  if (!Array.isArray(list) || list.length === 0) {
+    const visited = new Set<any>();
+    const queue: any[] = [];
+    if (raw && typeof raw === "object") queue.push(raw);
+    while (queue.length) {
+      const cur = queue.shift();
+      if (!cur || visited.has(cur)) continue;
+      visited.add(cur);
+      if (Array.isArray(cur)) { list = cur; break; }
+      for (const key of Object.keys(cur)) {
+        const val = (cur as any)[key];
+        if (Array.isArray(val)) { list = val; queue.length = 0; break; }
+        if (val && typeof val === "object") queue.push(val);
+      }
+    }
+    if (!Array.isArray(list)) list = [];
+  }
   return list.map(mapBackendToProduto);
 }
 
