@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getCurrentUser } from "@/services/auth/api";
 import { Link } from "react-router-dom";
 import DashboardCard from "@/components/common/DashboardCard";
 import Skeleton from "@/components/ui/skeleton";
@@ -13,6 +14,7 @@ export default function Dashboard() {
   const [salesTotal, setSalesTotal] = useState<number>(0);
   const [categoriesCount, setCategoriesCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
+  const role = String(getCurrentUser()?.role || '').toUpperCase();
 
   // Mock fallback values in case services return nothing
   const mock = {
@@ -63,21 +65,22 @@ export default function Dashboard() {
           <div className="text-sm text-muted-foreground mt-1">Visão geral do sistema e acessos rápidos</div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="text-sm text-muted-foreground">Bem-vindo, operador</div>
+          <div className="text-sm text-muted-foreground">Bem-vindo, {getCurrentUser()?.name || "operador"}</div>
         </div>
       </header>
 
       <section className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 mb-8">
-        <DashboardCard
-          title="Vendas do dia"
-          value={`R$ ${salesValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
-          icon={<DollarSign className="w-5 h-5" />}
-          color="bg-[#fff7f0] text-[#b85b00]"
-
-          stacked
-        >
-          {loading ? <Skeleton className="w-24" /> : "Total de vendas processadas hoje"}
-        </DashboardCard>
+        {(role === 'ADMIN' || role === 'MASTER') && (
+          <DashboardCard
+            title="Vendas do dia"
+            value={`R$ ${salesValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+            icon={<DollarSign className="w-5 h-5" />}
+            color="bg-[#fff7f0] text-[#b85b00]"
+            stacked
+          >
+            {loading ? <Skeleton className="w-24" /> : "Total de vendas processadas hoje"}
+          </DashboardCard>
+        )}
 
         <DashboardCard
           title="Comandas ativas"
@@ -136,14 +139,22 @@ export default function Dashboard() {
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2 rounded-lg border p-4 bg-gradient-to-br from-[#fff7f0] to-[#fff1e6] h-56">
             <div className="text-sm text-muted-foreground mb-2">Gráfico de vendas (placeholder)</div>
-            <div className="h-full bg-white/60 rounded-md flex items-center justify-center text-sm text-muted-foreground">Gráfico</div>
+            {(role === 'ADMIN' || role === 'MASTER') ? (
+              <div className="h-full bg-white/60 rounded-md flex items-center justify-center text-sm text-muted-foreground">Gráfico</div>
+            ) : (
+              <div className="h-full bg-white/60 rounded-md" />
+            )}
           </div>
           <div className="rounded-lg border p-4 h-56">
             <div className="text-sm text-muted-foreground mb-2">Notificações</div>
-            <ul className="text-sm space-y-2">
-              <li className="text-sm">• Caixa com saldo POSITIVO</li>
-              <li className="text-sm">• 2 comandas com atraso</li>
-            </ul>
+            {(role === 'ADMIN' || role === 'MASTER') ? (
+              <ul className="text-sm space-y-2">
+                <li className="text-sm">• Caixa com saldo POSITIVO</li>
+                <li className="text-sm">• 2 comandas com atraso</li>
+              </ul>
+            ) : (
+              <ul className="text-sm space-y-2" />
+            )}
           </div>
         </div>
       </section>

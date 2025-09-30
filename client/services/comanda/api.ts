@@ -18,6 +18,7 @@ export interface Comanda {
   closedAt?: string | null;
   status?: "ABERTA" | "FECHADA";
   total?: number;
+  responsibleName?: string;
 }
 import { getCurrentUser } from "@/services/auth/api";
 
@@ -111,14 +112,16 @@ function mapBackendTab(tab: any): Comanda {
     closedAt: tab?.closedAt || null,
     status: tab?.status === "OPEN" ? "ABERTA" : (tab?.status === "CLOSED" ? "FECHADA" : undefined),
     total: Number(tab?.total || 0),
+    responsibleName: tab?.responsibleName || tab?.openedBy?.name || tab?.waiter?.name || tab?.waiterName || undefined,
   };
 }
 
-export async function openTab(payload: { buyerName: string; items: Array<{ productId: string; quantity: number }>; paymentMethod?: "CASH" | "PIX" | "CREDIT" | "DEBIT"; clientId?: string }): Promise<Comanda> {
+export async function openTab(payload: { buyerName: string; items: Array<{ productId: string; quantity: number }>; paymentMethod?: "CASH" | "PIX" | "CREDIT" | "DEBIT"; clientId?: string; responsibleName?: string }): Promise<Comanda> {
   const body: any = {
     buyerName: payload.buyerName,
     items: (payload.items || []).map((it) => ({ productId: it.productId, quantity: it.quantity })),
   };
+  if (payload.responsibleName) body.responsibleName = payload.responsibleName;
   if (payload.paymentMethod) body.paymentMethod = payload.paymentMethod;
   if (payload.clientId) body.clientId = payload.clientId;
   const res = await apiSend<any>(`/tabs/open`, "POST", body);
@@ -126,10 +129,10 @@ export async function openTab(payload: { buyerName: string; items: Array<{ produ
   return mapBackendTab(res.data);
 }
 
-export async function createComanda(payload: Partial<Comanda> & { paymentMethod?: string; clientId?: string }): Promise<Comanda> {
+export async function createComanda(payload: Partial<Comanda> & { paymentMethod?: string; clientId?: string; responsibleName?: string }): Promise<Comanda> {
   const items = (payload.items || []).map((i) => ({ productId: i.productId, quantity: i.qty }));
   const pm = (payload.paymentMethod || "CASH").toUpperCase() as any;
-  return openTab({ buyerName: payload.table || "Mesa", items, paymentMethod: pm, clientId: payload.clientId });
+  return openTab({ buyerName: payload.table || "Mesa", items, paymentMethod: pm, clientId: payload.clientId, responsibleName: payload.responsibleName });
 }
 
 export async function getActiveComandas(): Promise<Comanda[]> {

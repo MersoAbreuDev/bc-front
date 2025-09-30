@@ -16,7 +16,7 @@ import {
 import { toast } from "sonner";
 import { Lock } from "lucide-react";
 import type { DocType, LoginResponse, ForgotPasswordResponse } from "@shared/api";
-import { login, forgotPassword } from "@/services/auth";
+import { login, forgotPassword, getCurrentUser } from "@/services/auth";
 import { useNavigate } from "react-router-dom";
 import {
   formatDocumentByType,
@@ -69,13 +69,100 @@ export default function Index() {
 
     try {
       const data: LoginResponse = await login(payload);
-      if (!data.success) throw new Error(data.message || "Erro ao entrar");
+      if (!data.success) {
+        // exibir modais específicos conforme status/código
+        const status = String((data as any)?.status || "").toLowerCase();
+        const code = String((data as any)?.code || "").toUpperCase();
+        const msg = (data as any)?.message || "";
+        const support = (data as any)?.support as string | undefined;
+        if (status === "suspended" || code === "TENANT_SUSPENDED" || /suspens/i.test(msg)) {
+          showBlockingModal("Sua empresa está suspensa no momento, procure o administrador do sistema", support);
+          return;
+        }
+        if (status === "blocked" || code === "TENANT_BLOCKED" || /bloquead/i.test(msg)) {
+          showBlockingModal("Empresa bloqueada, procure o administrador do sistema", support);
+          return;
+        }
+        if (status === "pending" || code === "TENANT_PENDING" || /pendên/i.test(msg)) {
+          showInfoModal("Sua empresa possui pendências que podem levar ao bloqueio. Procure o administrador do sistema.", support);
+          return;
+        }
+        throw new Error(data.message || "Erro ao entrar");
+      }
+      // Se logou com status pendente ou houver tenantWarning, registra lembrete periódico
+      const warn = (data as any)?.tenantWarning as string | undefined;
+      if ((data as any)?.status === "pending" || (warn && warn.length > 0)) {
+        // extrai número de suporte do texto se vier embutido
+        const supportFromWarn = (warn?.match(/\(\d+\)\s?\d{4,5}-?\d{4}/)?.[0]) || (data as any)?.support;
+        schedulePendingReminder(supportFromWarn);
+        // mostra imediatamente também
+        showInfoModal(warn || "Sua empresa possui pendências que podem levar ao bloqueio. Procure o administrador do sistema.", supportFromWarn);
+      }
       toast.success("Bem-vindo ao BComandas!");
-      navigate("/dashboard");
+      const me: any = getCurrentUser();
+      const role = String(me?.role || "").toUpperCase();
+      const redirectByRole: Record<string, string> = {
+        MASTER: "/dashboard",
+        ADMIN: "/dashboard",
+        CASHIER: "/dashboard",
+        WAITER: "/comandas/abrir",
+      };
+      navigate(redirectByRole[role] || "/dashboard");
     } catch (e: any) {
       toast.error(e.message || "Falha no login");
     }
   };
+
+  function showBlockingModal(message: string, support?: string) {
+    const el = document.createElement("div");
+    const supportHtml = support ? `<div style=\"margin-top:8px;font-size:14px;color:#334155\"><b>Suporte:</b> ${support}<br/><b>Horário:</b> 08:00 às 18:00 (seg-sex), 08:00 às 12:00 (sáb-dom)</div>` : "";
+    el.innerHTML = `<div style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999">\
+      <div style="background:#fff;padding:16px;border-radius:8px;max-width:480px;width:90%">\
+        <h3 style="margin:0 0 8px 0;font-size:18px;font-weight:600">Acesso indisponível</h3>\
+        <div style="font-size:14px;color:#334155">${message}</div>\
+        ${supportHtml}\
+        <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px">\
+          <button id="modal-ok" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc">Ok</button>\
+        </div>\
+      </div>\
+    </div>`;
+    document.body.appendChild(el);
+    const ok = el.querySelector('#modal-ok') as HTMLButtonElement | null;
+    ok?.addEventListener('click', () => { document.body.removeChild(el); });
+  }
+
+  function schedulePendingReminder(support?: string) {
+    const key = "bcomandas:pending:next";
+    const now = Date.now();
+    const stored = Number(localStorage.getItem(key) || 0);
+    if (stored && stored > now) return; // já agendado
+    const next = now + 10 * 60 * 1000; // 10 min
+    localStorage.setItem(key, String(next));
+    setTimeout(() => {
+      const msg = "Sua empresa possui pendências que podem levar ao bloqueio. Procure o administrador do sistema.";
+      showInfoModal(msg, support);
+      localStorage.removeItem(key);
+      schedulePendingReminder(support);
+    }, 10 * 60 * 1000);
+  }
+
+  function showInfoModal(message: string, support?: string) {
+    const el = document.createElement("div");
+    const supportHtml = support ? `<div style=\"margin-top:8px;font-size:14px;color:#334155\"><b>Suporte:</b> ${support}<br/><b>Horário:</b> 08:00 às 18:00 (seg-sex), 08:00 às 12:00 (sáb-dom)</div>` : "";
+    el.innerHTML = `<div style="position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:9999">\
+      <div style=\"background:#fff;padding:16px;border-radius:8px;max-width:460px;width:90%\">\
+        <h3 style=\"margin:0 0 8px 0;font-size:18px;font-weight:600\">Aviso</h3>\
+        <div style=\"font-size:14px;color:#334155\">${message}</div>\
+        ${supportHtml}\
+        <div style=\"margin-top:12px;display:flex;justify-content:flex-end;gap:8px\">\
+          <button id=\"info-ok\" style=\"padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc\">Ok</button>\
+        </div>\
+      </div>\
+    </div>`;
+    document.body.appendChild(el);
+    const ok = el.querySelector('#info-ok') as HTMLButtonElement | null;
+    ok?.addEventListener('click', () => { document.body.removeChild(el); });
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f8fafc]/0 to-[#fff]/0">
@@ -142,7 +229,7 @@ export default function Index() {
               </Form>
 
               <div className="mt-4 text-center text-sm text-slate-500">
-                Esqueceu a senha? <ForgotPasswordTrigger />
+                Esqueceu a senha? <ForgotPasswordTrigger currentValue={form.getValues("document")} docType={docType} />
               </div>
             </CardContent>
           </Card>
@@ -152,7 +239,7 @@ export default function Index() {
   );
 }
 
-function ForgotPasswordTrigger() {
+function ForgotPasswordTrigger({ currentValue, docType }: { currentValue: string; docType: DocType }) {
   const [open, setOpen] = useState(false);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -163,24 +250,21 @@ function ForgotPasswordTrigger() {
         <DialogHeader>
           <DialogTitle>Recuperar senha</DialogTitle>
         </DialogHeader>
-        <ForgotPasswordForm onClose={() => setOpen(false)} />
+        <ForgotPasswordForm onClose={() => setOpen(false)} initialValue={currentValue} initialDocType={docType} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function ForgotPasswordForm({ onClose }: { onClose: () => void }) {
-  const [value, setValue] = useState("");
+function ForgotPasswordForm({ onClose, initialValue, initialDocType }: { onClose: () => void; initialValue: string; initialDocType: DocType }) {
+  const [value, setValue] = useState(initialValue || "");
   const [loading, setLoading] = useState(false);
   const dt = detectDocType(value);
 
   const submit = async () => {
     try {
       setLoading(true);
-      const data: ForgotPasswordResponse = await forgotPassword({
-        docType: dt,
-        document: dt === "email" ? value.trim() : onlyDigits(value),
-      });
+      const data: ForgotPasswordResponse = await forgotPassword({ docType: "email", document: value.trim() });
       if (!data.success) throw new Error(data.message || "Erro");
       toast.success(data.message || "Se existir uma conta, enviamos instruções para redefinir a senha.");
       onClose();
@@ -193,13 +277,8 @@ function ForgotPasswordForm({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="space-y-3">
-      <FormLabel htmlFor="doc">{dt.toUpperCase()}</FormLabel>
-      <Input
-        id="doc"
-        placeholder={dt === "email" ? "email@example.com" : "000.000.000-00 ou 00.000.000/0000-00"}
-        value={dt === "email" ? value : formatDocumentByType(dt, value)}
-        onChange={(e) => setValue(e.target.value)}
-      />
+      <label htmlFor="doc" className="text-sm font-medium">Digite seu login de acesso!</label>
+      <Input id="doc" value={value} onChange={(e) => setValue(e.target.value)} />
       <Button onClick={submit} disabled={loading} className="w-full bg-gradient-to-r from-[#ff7a18] to-[#ffb86b] text-white">
         {loading ? "Enviando..." : "Enviar instruções"}
       </Button>
