@@ -13,9 +13,14 @@ import CategoriasPage from "./pages/categorias/Index";
 import ProdutosPage from "./pages/produtos/Index";
 import AbrirComanda from "./pages/comandas/Abrir";
 import RelatoriosPage from "./pages/relatorios/Index";
+import QrCodePage from "./pages/QrCode";
 import NotFound from "./pages/NotFound";
 import Layout from "@/components/common/Layout";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
+import RoleRoute from "@/components/common/RoleRoute";
+import AdminHome from "@/pages/admin/Index";
+import AdminUsuariosPage from "@/pages/admin/Usuarios";
+import AdminTenantsPage from "@/pages/admin/Tenants";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +40,10 @@ const App = () => (
             <Route path="/produtos" element={<ProdutosPage />} />
             <Route path="/comandas/abrir" element={<AbrirComanda />} />
             <Route path="/relatorios" element={<RelatoriosPage />} />
+            <Route path="/admin" element={<RoleRoute roles={["MASTER"]}><AdminHome /></RoleRoute>} />
+            <Route path="/admin/usuarios" element={<RoleRoute roles={["MASTER"]}><AdminUsuariosPage /></RoleRoute>} />
+            <Route path="/admin/tenants" element={<RoleRoute roles={["MASTER"]}><AdminTenantsPage /></RoleRoute>} />
+            <Route path="/qr" element={<QrCodePage />} />
           </Route>
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

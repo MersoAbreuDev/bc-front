@@ -57,11 +57,22 @@ export async function login(payload: LoginRequest): Promise<LoginResponse> {
       data?.tenant?.id ||
       data?.user?.tenantId ||
       data?.user?.tenant?.id;
+    // tenta obter role do payload de resposta ou do token JWT
+    const decodedRole = (() => {
+      try {
+        const part = token.split(".")[1];
+        if (!part) return undefined;
+        const payload = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+        return payload?.role || payload?.roles?.[0] || payload?.["https://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+      } catch { return undefined; }
+    })();
+
     const user = {
       token,
       docType,
       document: normalizedDocument,
       name: data?.name || data?.user?.name || "Operador",
+      ...(data?.role || data?.user?.role || decodedRole ? { role: (data?.role || data?.user?.role || decodedRole) } : {}),
       ...(tenantId ? { tenantId } : {}),
     };
     localStorage.setItem(AUTH_KEY, JSON.stringify(user));
@@ -91,5 +102,24 @@ export function logout() {
 
 export function getCurrentUser() {
   const raw = localStorage.getItem(AUTH_KEY);
-  return raw ? JSON.parse(raw) : null;
+  if (!raw) return null;
+  try {
+    const u = JSON.parse(raw);
+    if (!u?.role && u?.token) {
+      try {
+        const part = String(u.token).split(".")[1];
+        if (part) {
+          const payload = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+          const role = payload?.role || payload?.roles?.[0] || payload?.["https://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+          if (role) {
+            u.role = role;
+            localStorage.setItem(AUTH_KEY, JSON.stringify(u));
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    return u;
+  } catch {
+    return null;
+  }
 }

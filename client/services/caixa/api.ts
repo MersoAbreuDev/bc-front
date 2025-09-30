@@ -213,6 +213,20 @@ export async function getCashSummaryRemote(cashId: string): Promise<{ success: b
   return { success: true, data: res.data as any };
 }
 
+export async function getSalesSummaryPeriod(params: { from?: string; to?: string }): Promise<{
+  success: boolean;
+  data?: { totalSales: number | string; countClosed: number; byPayment: Record<string, { total: number | string; count: number }> };
+  message?: string;
+}> {
+  const qs: string[] = [];
+  if (params.from) qs.push(`from=${encodeURIComponent(params.from)}`);
+  if (params.to) qs.push(`to=${encodeURIComponent(params.to)}`);
+  const path = `/dashboard/sales-summary${qs.length ? `?${qs.join("&")}` : ""}`;
+  const res = await apiGet<any>(path);
+  if (!res.ok) return { success: false, message: res.message };
+  return { success: true, data: res.data as any };
+}
+
 export async function openBox(payload: {
   usuario_responsavel: string;
   saldo_inicial_efetivo: number;
