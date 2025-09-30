@@ -23,6 +23,10 @@ export interface LoginResponse {
   success: boolean;
   token?: string;
   message?: string;
+  code?: string;
+  status?: "active" | "suspended" | "blocked" | "pending";
+  support?: string;
+  tenantWarning?: string;
 }
 
 export interface ForgotPasswordRequest {
