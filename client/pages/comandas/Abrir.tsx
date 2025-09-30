@@ -149,7 +149,7 @@ export default function AbrirComanda() {
   };
 
   const filteredComandas = comandas
-    .filter((c) => !filter || (c.garcom_id || "").toLowerCase().includes(filter.toLowerCase()))
+    .filter((c) => !filter || (String(c.responsibleName || "").toLowerCase().includes(filter.toLowerCase())))
     .filter((c) => {
       if (statusFilter === 'open') return !c.closedAt && c.status !== 'FECHADA';
       if (statusFilter === 'closed') return c.closedAt || c.status === 'FECHADA';
@@ -169,7 +169,11 @@ export default function AbrirComanda() {
 
   const createComandaFromModal = async () => {
     try {
-      const payload: any = { garcom_id: createResponsible || user?.name, clientId: draftTabId || undefined, items: createItems.map((it) => ({ productId: it.productId, qty: it.qty, name: it.name, price: it.price })) };
+      const payload: any = {
+        responsibleName: createResponsible || user?.name,
+        clientId: draftTabId || undefined,
+        items: createItems.map((it) => ({ productId: it.productId, qty: it.qty, name: it.name, price: it.price })),
+      };
       const c = await ComandaService.createComanda(payload);
       setCreateOpen(false);
       setCreateItems([]);
@@ -258,21 +262,21 @@ export default function AbrirComanda() {
   const subtotalDelivered = selected ? (selected.items || []).filter((it: any) => it.entregue).reduce((s: number, it: any) => s + (it.qty * (it.price || 0)), 0) : 0;
 
   return (
-    <div className="p-6">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="p-4 sm:p-6">
+      <div className="mb-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         <h2 className="text-2xl font-bold">Atendimentos</h2>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-1 flex-wrap">
             <button onClick={() => { setStatusFilter('open'); setPage(1); }} className={`px-3 py-1 rounded ${statusFilter === 'open' ? 'bg-gray-200' : 'border'}`}>Abertas</button>
             <button onClick={() => { setStatusFilter('closed'); setPage(1); }} className={`px-3 py-1 rounded ${statusFilter === 'closed' ? 'bg-gray-200' : 'border'}`}>Fechadas</button>
             <button onClick={() => { setStatusFilter('all'); setPage(1); }} className={`px-3 py-1 rounded ${statusFilter === 'all' ? 'bg-gray-200' : 'border'}`}>Todas</button>
           </div>
-          <Input placeholder="Buscar por responsável" value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }} className="w-64 h-10 mb-0" />
+          <Input placeholder="Buscar por responsável" value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }} className="w-full md:w-64 h-10 mb-0" />
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button>Novo Atendimento</Button>
+              <Button className="w-full md:w-auto">Novo Atendimento</Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[80vh] overflow-y-auto">
+            <DialogContent className="w-[95vw] sm:w-auto sm:max-w-[700px] max-h-[85vh] overflow-y-auto p-4 sm:p-6">
               <DialogHeader>
                 <DialogTitle>Novo Atendimento</DialogTitle>
               </DialogHeader>
@@ -302,7 +306,7 @@ export default function AbrirComanda() {
                     </div>
                     <div>
                       <Label>Quantidade</Label>
-                      <Input type="number" value={tempQty} onChange={(e) => setTempQty(parseInt(e.target.value || '1'))} className="h-10 mb-0" />
+                      <Input type="number" inputMode="numeric" value={tempQty} onChange={(e) => setTempQty(parseInt(e.target.value || '1'))} className="h-10 mb-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                     </div>
                     <div>
                       <Label>Preço unit.</Label>
@@ -339,16 +343,16 @@ export default function AbrirComanda() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {loading ? (
           [...Array(8)].map((_, i) => (<div key={i} className="h-32 bg-gray-100 animate-pulse rounded" />))
         ) : (
           filteredComandas.length === 0 ? <div className="text-sm text-muted-foreground">Nenhuma comanda</div> : (
             filteredComandas.slice((page - 1) * pageSize, page * pageSize).map((c) => (
-              <div key={c.id} className={`p-3 rounded border cursor-pointer ${selected?.id === c.id ? 'bg-gray-100' : 'hover:bg-gray-50' } flex flex-col justify-between h-full`} onClick={() => openView(c)}>
+              <div key={c.id} className={`p-3 rounded border cursor-pointer ${selected?.id === c.id ? 'bg-gray-100' : 'hover:bg-gray-50' } flex flex-col justify-between h-full break-words`} onClick={() => openView(c)}>
                 <div>
-                  <div className="font-medium">{c.id}</div>
-                  <div className="text-sm text-muted-foreground">Responsável: {c.garcom_id || '-'}</div>
+                  <div className="font-medium">{c.responsibleName || 'Atendimento'}</div>
+                  <div className="text-sm text-muted-foreground">Responsável: {c.responsibleName || '-'}</div>
                   <div className="text-sm text-muted-foreground">Abertura: {new Date(c.openAt).toLocaleString()}</div>
                 </div>
                 <div className="text-right mt-3">
@@ -361,7 +365,7 @@ export default function AbrirComanda() {
         )}
       </div>
 
-      <div className="flex items-center justify-center gap-2 mt-4">
+      <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
         <button onClick={() => setPage((p) => Math.max(1, p - 1))} className="px-3 py-1 border rounded">Anterior</button>
         {Array.from({ length: Math.max(1, Math.ceil(filteredComandas.length / pageSize)) }).map((_, i) => (
           <button key={i} onClick={() => setPage(i + 1)} className={`px-2 py-1 rounded ${page === i + 1 ? 'bg-gray-200' : 'border'}`}>{i + 1}</button>
@@ -370,16 +374,16 @@ export default function AbrirComanda() {
       </div>
 
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogContent className="max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:w-auto sm:max-w-[900px] max-h-[85vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Comanda</DialogTitle>
+            <DialogTitle>Atendimento</DialogTitle>
           </DialogHeader>
 
           {selected ? (
             <div className="space-y-3">
               <div>
                 <div className="text-sm text-muted-foreground">Responsável</div>
-                <div className="font-medium">{selected.garcom_id || selected.id}</div>
+                <div className="font-medium">{selected.responsibleName || selected.id}</div>
                 <div className="text-sm text-muted-foreground">Abertura: {new Date(selected.openAt).toLocaleString()}</div>
               </div>
 
@@ -410,10 +414,10 @@ export default function AbrirComanda() {
                     <CurrencyInput value={price} onChange={(n) => setPrice(n)} className="h-10 mb-0" />
                   </div>
                 </div>
-                <div className="flex justify-between items-center gap-3 mt-3">
+                  <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 mt-3">
                   <div className="text-sm text-muted-foreground">Observação (opcional)</div>
                   <div className="flex items-center gap-2">
-                    <Input value={note} onChange={(e) => setNote(e.target.value)} className="w-64 h-10 mb-0" />
+                      <Input value={note} onChange={(e) => setNote(e.target.value)} className="w-full md:w-64 h-10 mb-0" />
                     <Button onClick={addItem}>Adicionar</Button>
                   </div>
                 </div>
@@ -536,7 +540,7 @@ function printComanda(comanda: any) {
     const itemsHtml = (comanda.items || []).map((it: any) => `<tr><td style=\"padding:4px\">${it.name} x${it.qty}</td><td style=\"padding:4px;text-align:right\">R$ ${Number(it.price * it.qty).toFixed(2)}</td></tr>`).join("");
     const subtotal = (comanda.items || []).filter((it: any) => it.entregue).reduce((s: number, it: any) => s + (it.qty * (it.price || 0)), 0);
     const total = comanda.total || subtotal;
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Comanda</title><style>body{font-family:monospace;font-size:12px}table{width:100%;border-collapse:collapse}td{padding:4px}</style></head><body><h3>Comanda ${comanda.id}</h3><div>Responsável: ${comanda.garcom_id || '-'}</div><div>Abertura: ${new Date(comanda.openAt).toLocaleString()}</div><table>${itemsHtml}</table><hr/><div>Subtotal: R$ ${Number(subtotal).toFixed(2)}</div><div>Total: R$ ${Number(total).toFixed(2)}</div></body></html>`;
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Atendimento</title><style>body{font-family:monospace;font-size:12px}table{width:100%;border-collapse:collapse}td{padding:4px}</style></head><body><h3>Atendimento</h3><div>Responsável: ${comanda.responsibleName || '-'}</div><div>Abertura: ${new Date(comanda.openAt).toLocaleString()}</div><table>${itemsHtml}</table><hr/><div>Subtotal: R$ ${Number(subtotal).toFixed(2)}</div><div>Total: R$ ${Number(total).toFixed(2)}</div></body></html>`;
     w.document.open();
     w.document.write(html);
     w.document.close();
