@@ -10,9 +10,6 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=8080
-    ports:
-      - "8080:8080"
-    restart: unless-stopped
     networks:
       - dokploy-network
     labels:
@@ -24,4 +21,5 @@ services:
     restart: unless-stopped
 
 networks:
-  - dokploy-network
+  dokploy-network:
+    external: true
