@@ -20,11 +20,11 @@ FROM node:20-slim AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production
-ENV PORT=8081
+ENV PORT=8080
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/dist ./dist
 
-EXPOSE 8081
+EXPOSE 8080
 CMD ["node", "dist/server/node-build.mjs"]
