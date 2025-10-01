@@ -6,7 +6,7 @@ function onlyDigits(v: string) { return (v||"").replace(/\D+/g,""); }
 
 function getApiBase(): string {
   const base = import.meta.env.VITE_API_URL || "http://localhost:5337"
-  return base.replace(/\/$/, "")
+  return "https://api.bcomandas.com.br";
 }
 
 export async function login(payload: LoginRequest): Promise<LoginResponse> {
