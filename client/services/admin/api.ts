@@ -2,7 +2,7 @@ import { getCurrentUser } from "@/services/auth/api";
 
 function getApiBase(): string {
   const base = import.meta.env.VITE_API_URL || "http://localhost:5337"
-  return "https://api.bcomandas.com.br";
+  return String(base || "http://localhost:5337").replace(/\/$/, "");
 }
 
 function getAuthHeaders() {
@@ -45,7 +45,13 @@ export async function deleteTenant(id: string) { const r = await api<any>(`/tena
 
 // Register tenant + admin user in one call
 export async function registerTenant(body: any) {
-  const r = await api<any>(`/tenants/register`, { method: "POST", body: JSON.stringify(body) });
+  // Nunca enviar senha do admin pelo front; garante acesso como CNPJ se vier cnpj
+  const safe: any = { ...body };
+  // Não enviar campos de acesso via front
+  delete safe.acesso;
+  delete safe.adminAcesso;
+  delete safe.adminPassword;
+  const r = await api<any>(`/tenants/register`, { method: "POST", body: JSON.stringify(safe) });
   if (!r.ok) throw new Error(r.message);
   return r.data;
 }

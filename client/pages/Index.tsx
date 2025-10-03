@@ -98,8 +98,12 @@ export default function Index() {
         // mostra imediatamente também
         showInfoModal(warn || "Sua empresa possui pendências que podem levar ao bloqueio. Procure o administrador do sistema.", supportFromWarn);
       }
-      toast.success("Bem-vindo ao BComandas!");
       const me: any = getCurrentUser();
+      if (me?.mustChangePassword) {
+        navigate("/primeiro-acesso/alterar-senha", { replace: true });
+        return;
+      }
+      toast.success("Bem-vindo ao BComandas!");
       const role = String(me?.role || "").toUpperCase();
       const redirectByRole: Record<string, string> = {
         MASTER: "/dashboard",
@@ -222,7 +226,12 @@ export default function Index() {
                     )}
                   />
 
-                  <Button type="submit" className="w-full bg-gradient-to-r from-[#ff7a18] to-[#ffb86b] text-white">
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-[#ff7a18] to-[#ffb86b] text-white"
+                    loading={form.formState.isSubmitting}
+                    loadingText="Entrando..."
+                  >
                     Entrar
                   </Button>
                 </form>
@@ -279,8 +288,8 @@ function ForgotPasswordForm({ onClose, initialValue, initialDocType }: { onClose
     <div className="space-y-3">
       <label htmlFor="doc" className="text-sm font-medium">Digite seu login de acesso!</label>
       <Input id="doc" value={value} onChange={(e) => setValue(e.target.value)} />
-      <Button onClick={submit} disabled={loading} className="w-full bg-gradient-to-r from-[#ff7a18] to-[#ffb86b] text-white">
-        {loading ? "Enviando..." : "Enviar instruções"}
+      <Button onClick={submit} loading={loading} loadingText="Enviando..." className="w-full bg-gradient-to-r from-[#ff7a18] to-[#ffb86b] text-white">
+        Enviar instruções
       </Button>
     </div>
   );

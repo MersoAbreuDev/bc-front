@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Loader2 } from "lucide-react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
@@ -37,17 +38,49 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  loading?: boolean;
+  loadingText?: string;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, loading, loadingText, children, onClick, disabled, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
+    const [autoLoading, setAutoLoading] = React.useState(false);
+
+    const handleClick = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+      if (!onClick) return;
+      try {
+        const r = onClick(e);
+        // Se o handler retornar uma Promise, ativa loading automático até resolver
+        if (r && typeof (r as any).then === "function") {
+          setAutoLoading(true);
+          await (r as any);
+        }
+      } finally {
+        setAutoLoading(false);
+      }
+    };
+
+    const isLoading = Boolean(loading) || autoLoading;
+    const isDisabled = Boolean(disabled) || isLoading;
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
+        onClick={handleClick}
+        aria-busy={isLoading ? true : undefined}
+        disabled={isDisabled}
         {...props}
-      />
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="animate-spin" />
+            {loadingText ? loadingText : children}
+          </>
+        ) : (
+          children
+        )}
+      </Comp>
     );
   },
 );

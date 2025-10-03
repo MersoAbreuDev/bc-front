@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import CurrencyInput from "@/components/common/CurrencyInput";
 import { Button } from "@/components/ui/button";
+import { useAlert } from "@/components/common/ConfirmProvider";
 import { format } from "date-fns";
 import { getCurrentUser } from "@/services/auth/api";
 
@@ -27,6 +28,7 @@ export default function CaixaPage() {
   const [closingCash, setClosingCash] = useState<number>(0);
 
   const user = getCurrentUser();
+  const showAlert = useAlert();
 
   useEffect(() => {
     refresh();
@@ -127,8 +129,8 @@ export default function CaixaPage() {
   }
 
   async function handleAddMovement() {
-    if (!openBox) return alert("Abra o caixa antes");
-    if (!movValue || movValue <= 0) return alert("Informe um valor maior que 0");
+    if (!openBox) { await showAlert({ title: "Caixa fechado", description: "Abra o caixa antes de registrar movimentações.", okText: "Entendi" }); return; }
+    if (!movValue || movValue <= 0) { await showAlert({ title: "Valor inválido", description: "Informe um valor maior que 0.", okText: "OK" }); return; }
     try {
       const amount = Number(movValue).toFixed(2);
       const res = await CaixaService.registerMovementRemote({ type: movType, amount, description: movObs || undefined });
@@ -139,7 +141,7 @@ export default function CaixaPage() {
       setMovObs("");
     } catch (e) {
       console.error(e);
-      alert("Falha ao registrar movimentação");
+      await showAlert({ title: "Erro", description: "Falha ao registrar movimentação.", okText: "OK" });
     }
   }
 
@@ -153,7 +155,7 @@ export default function CaixaPage() {
       await refresh();
     } catch (e) {
       console.warn("Erro ao fechar caixa remoto", e);
-      alert("Falha ao fechar caixa remoto");
+      await showAlert({ title: "Erro", description: "Falha ao fechar caixa remoto.", okText: "OK" });
     } finally {
       // Limpa valores do fechamento
       setClosingCash(0);

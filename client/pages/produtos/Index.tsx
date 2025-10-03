@@ -3,11 +3,14 @@ import BackButton from "@/components/common/BackButton";
 import ProductForm from "@/components/common/ProductForm";
 import * as ProdutosService from "@/services/produtos";
 import { Trash2 } from "lucide-react";
+import { useConfirm } from "@/components/common/ConfirmProvider";
+import { Button } from "@/components/ui/button";
 import { listCategories } from "@/services/categoria";
 import { listComandas } from "@/services/comanda";
 import { toast } from "sonner";
 
 export default function ProdutosPage() {
+  const confirm = useConfirm();
   const [items, setItems] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Array<any>>([]);
@@ -63,7 +66,8 @@ export default function ProdutosPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Deseja excluir este produto?")) return;
+    const ok = await confirm({ title: "Excluir produto", description: "Deseja excluir este produto?", confirmText: "Excluir", cancelText: "Cancelar" });
+    if (!ok) return;
     try {
       const resp = await ProdutosService.deleteProduct(id).catch(() => ({ success: true }));
       if (resp.success) setItems((s) => s.filter((x) => x.id !== id));
@@ -169,9 +173,9 @@ export default function ProdutosPage() {
                     <td className="p-3">
                       <div className="flex gap-2">
                         <ProductForm item={p} onSaved={handleSaved} />
-                        <button onClick={() => handleDelete(p.id)} className="text-red-600">
+                        <Button variant="destructive" onClick={() => handleDelete(p.id)}>
                           <Trash2 className="w-4 h-4" />
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -202,9 +206,9 @@ export default function ProdutosPage() {
                   </div>
                   <div className="flex gap-2">
                     <ProductForm item={p} onSaved={handleSaved} />
-                    <button onClick={() => handleDelete(p.id)} className="text-red-600">
+                    <Button variant="destructive" onClick={() => handleDelete(p.id)}>
                       <Trash2 className="w-4 h-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>

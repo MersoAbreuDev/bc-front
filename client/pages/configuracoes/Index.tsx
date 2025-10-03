@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
 import * as Admin from "@/services/admin/api";
 import { getCurrentUser } from "@/services/auth/api";
+import { useConfirm } from "@/components/common/ConfirmProvider";
+import { Button } from "@/components/ui/button";
 
 export default function ConfiguracoesPage() {
+  const confirm = useConfirm();
   const me = getCurrentUser() as any;
   const tenantId = me?.tenantId || me?.tenant?.id;
 
@@ -38,7 +41,7 @@ export default function ConfiguracoesPage() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold">Configurações • Usuários</h2>
-        <button className="px-3 py-2 border rounded" onClick={() => setEditing({ role: "WAITER" })}>Novo usuário</button>
+        <Button onClick={() => setEditing({ role: "WAITER" })}>Novo usuário</Button>
       </div>
 
       {loading ? (
@@ -67,8 +70,16 @@ export default function ConfiguracoesPage() {
                   <td className="p-2">{maskPhone(u.phone || "")}</td>
                   <td className="p-2">{u.role}</td>
                   <td className="p-2 flex gap-2">
-                    <button className="px-2 py-1 border rounded" onClick={() => setEditing(u)}>Editar</button>
-                    <button className="px-2 py-1 border rounded text-red-600" onClick={async () => { if (confirm("Excluir?")) { await Admin.deleteUser(u.id); await load(); } }}>Excluir</button>
+                    <Button variant="outline" onClick={() => setEditing(u)}>Editar</Button>
+                    <Button
+                      variant="destructive"
+                      onClick={async () => {
+                        const ok = await confirm({ title: "Excluir usuário", description: `Confirma a exclusão de ${u.name}?`, confirmText: "Excluir", cancelText: "Cancelar" });
+                        if (!ok) return;
+                        await Admin.deleteUser(u.id);
+                        await load();
+                      }}
+                    >Excluir</Button>
                   </td>
                 </tr>
               ))}

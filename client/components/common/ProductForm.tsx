@@ -91,7 +91,7 @@ export default function ProductForm({
           </div>
 
           <div className="flex justify-end">
-            <Button onClick={submit} disabled={loading}>{loading ? "Salvando..." : "Salvar"}</Button>
+            <Button onClick={submit} loading={loading} loadingText="Salvando...">Salvar</Button>
           </div>
         </div>
       </DialogContent>

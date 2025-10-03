@@ -15,6 +15,7 @@ import AbrirComanda from "./pages/comandas/Abrir";
 import RelatoriosPage from "./pages/relatorios/Index";
 import QrCodePage from "./pages/QrCode";
 import ResetPasswordPage from "./pages/ResetPassword";
+import FirstAccessChangePassword from "./pages/FirstAccessChangePassword";
 import NotFound from "./pages/NotFound";
 import Layout from "@/components/common/Layout";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
@@ -23,6 +24,7 @@ import AdminHome from "@/pages/admin/Index";
 import AdminUsuariosPage from "@/pages/admin/Usuarios";
 import AdminTenantsPage from "@/pages/admin/Tenants";
 import ConfiguracoesPage from "@/pages/configuracoes/Index";
+import { ConfirmProvider } from "@/components/common/ConfirmProvider";
 
 const queryClient = new QueryClient();
 
@@ -31,10 +33,12 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <ConfirmProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/primeiro-acesso/alterar-senha" element={<FirstAccessChangePassword />} />
 
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route path="/dashboard" element={<RoleRoute roles={["MASTER","ADMIN","CASHIER"]}><Dashboard /></RoleRoute>} />
@@ -54,6 +58,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      </ConfirmProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -6,7 +6,7 @@ function onlyDigits(v: string) { return (v||"").replace(/\D+/g,""); }
 
 function getApiBase(): string {
   const base = import.meta.env.VITE_API_URL || "http://localhost:5337"
-  return "https://api.bcomandas.com.br";
+  return String(base || "http://localhost:5337").replace(/\/$/, "");
 }
 
 export async function login(payload: LoginRequest): Promise<LoginResponse> {
@@ -73,14 +73,29 @@ export async function login(payload: LoginRequest): Promise<LoginResponse> {
       } catch { return undefined; }
     })();
 
+    const decodedPayload = (() => {
+      try {
+        const part = token.split(".")[1];
+        if (!part) return undefined;
+        return JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+      } catch { return undefined; }
+    })();
+    const userId = data?.user?.id || decodedPayload?.sub || decodedPayload?.userId || decodedPayload?.id;
+    const mustChangePassword = Boolean(
+      (data?.user && typeof data.user.mustChangePassword === "boolean" && data.user.mustChangePassword) ||
+      (decodedPayload && typeof decodedPayload.mustChangePassword === "boolean" && decodedPayload.mustChangePassword)
+    );
+
     const user = {
       token,
       docType,
       document: normalizedDocument,
       name: data?.name || data?.user?.name || "Operador",
+      ...(userId ? { id: userId } : {}),
       ...(data?.role || data?.user?.role || decodedRole ? { role: (data?.role || data?.user?.role || decodedRole) } : {}),
       ...(tenantId ? { tenantId } : {}),
-    };
+      ...(mustChangePassword ? { mustChangePassword: true } : {}),
+    } as any;
     localStorage.setItem(AUTH_KEY, JSON.stringify(user));
     const status: any = data?.status || data?.tenantStatus || data?.user?.tenant?.status;
     const support: any = data?.support;

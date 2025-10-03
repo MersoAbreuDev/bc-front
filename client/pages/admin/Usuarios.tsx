@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
 import * as Admin from "@/services/admin/api";
+import { useConfirm, useAlert } from "@/components/common/ConfirmProvider";
+import { Button } from "@/components/ui/button";
 
 export default function AdminUsuariosPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<any | null>(null);
+  const [saving, setSaving] = useState(false);
+  const confirm = useConfirm();
+  const alert = useAlert();
   const roleLabel = (r?: string) => {
     const key = String(r || "").toUpperCase();
     switch (key) {
@@ -23,18 +28,23 @@ export default function AdminUsuariosPage() {
 
   const handleSave = async (ev: React.FormEvent<HTMLFormElement>) => {
     ev.preventDefault();
+    setSaving(true);
     const fd = new FormData(ev.currentTarget);
     const payload = Object.fromEntries(fd.entries());
-    if (editing?.id) await Admin.updateUser(editing.id, payload); else await Admin.createUser(payload);
-    setEditing(null);
-    await load();
+    try {
+      if (editing?.id) await Admin.updateUser(editing.id, payload); else await Admin.createUser(payload);
+      setEditing(null);
+      await load();
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold">Usuários</h2>
-        <button className="px-3 py-2 border rounded" onClick={() => setEditing({})}>Novo</button>
+        <Button onClick={() => setEditing({})}>Novo</Button>
       </div>
       {loading ? (
         <div className="rounded-lg border p-6">Carregando...</div>
@@ -62,8 +72,16 @@ export default function AdminUsuariosPage() {
                   <td className="p-2">{u.phone}</td>
                   <td className="p-2">{roleLabel(u.role)}</td>
                   <td className="p-2 flex gap-2">
-                    <button className="px-2 py-1 border rounded" onClick={() => setEditing(u)}>Editar</button>
-                    <button className="px-2 py-1 border rounded text-red-600" onClick={async () => { if (confirm("Excluir?")) { await Admin.deleteUser(u.id); await load(); } }}>Excluir</button>
+                    <Button variant="outline" onClick={() => setEditing(u)}>Editar</Button>
+                    <Button
+                      variant="destructive"
+                      onClick={async () => {
+                        const ok = await confirm({ title: "Excluir usuário", description: `Confirma a exclusão de ${u.name}?`, confirmText: "Excluir", cancelText: "Cancelar" });
+                        if (!ok) return;
+                        await Admin.deleteUser(u.id);
+                        await load();
+                      }}
+                    >Excluir</Button>
                   </td>
                 </tr>
               ))}
@@ -88,8 +106,8 @@ export default function AdminUsuariosPage() {
             </select>
             {!editing.id && (<input name="password" type="password" placeholder="Senha inicial" className="w-full border rounded p-2" />)}
             <div className="flex justify-end gap-2">
-              <button type="button" className="px-3 py-2 border rounded" onClick={() => setEditing(null)}>Cancelar</button>
-              <button type="submit" className="px-3 py-2 border rounded bg-black text-white">Salvar</button>
+              <Button type="button" variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
+              <Button type="submit" loading={saving} loadingText="Salvando...">Salvar</Button>
             </div>
           </form>
         </div>

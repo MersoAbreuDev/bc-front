@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import * as Admin from "@/services/admin/api";
+import { useConfirm } from "@/components/common/ConfirmProvider";
+import { Button } from "@/components/ui/button";
 
 const STATUS = ["active","suspended","blocked","pending"];
 const PLAN = ["free","basic","premium","enterprise"];
@@ -11,12 +13,15 @@ export default function AdminTenantsPage() {
   const [showUsersOf, setShowUsersOf] = useState<any | null>(null);
   const [usersOf, setUsersOf] = useState<any[]>([]);
   const [logoPreview, setLogoPreview] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const confirm = useConfirm();
 
   const load = async () => { setLoading(true); try { setItems(await Admin.listTenants()); } finally { setLoading(false); } };
   useEffect(() => { load(); }, []);
 
   const handleSave = async (ev: React.FormEvent<HTMLFormElement>) => {
     ev.preventDefault();
+    setSaving(true);
     const fd = new FormData(ev.currentTarget);
     const payload: any = Object.fromEntries(fd.entries());
 
@@ -30,6 +35,13 @@ export default function AdminTenantsPage() {
       const cents = Number(String(payload.monthlyFee).replace(/\D+/g, ""));
       payload.monthlyFee = Number((cents / 100).toFixed(2));
     }
+
+    // No cadastro inicial, o acesso do admin deve ser o CNPJ
+    // Não enviar campos de acesso via front
+    delete payload.acesso;
+    delete payload.adminAcesso;
+    // NUNCA enviar senha do admin pelo front
+    delete payload.adminPassword;
 
     // Upload de logo: prioriza arquivo -> logoBase64
     const file = fd.get("logoFile") as File | null;
@@ -55,6 +67,7 @@ export default function AdminTenantsPage() {
 
     setEditing(null);
     await load();
+    setSaving(false);
   };
 
   const openUsersModal = async (tenant: any) => {
@@ -66,7 +79,7 @@ export default function AdminTenantsPage() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold">Tenants</h2>
-        <button className="px-3 py-2 border rounded" onClick={() => setEditing({})}>Novo</button>
+        <Button onClick={() => setEditing({})}>Novo</Button>
       </div>
       {loading ? (
         <div className="rounded-lg border p-6">Carregando...</div>
@@ -94,9 +107,17 @@ export default function AdminTenantsPage() {
                   <td className="p-2">{t.monthlyFee}</td>
                   <td className="p-2">{t.nextPaymentDate}</td>
                   <td className="p-2 flex gap-2">
-                    <button className="px-2 py-1 border rounded" onClick={() => setEditing(t)}>Editar</button>
-                    <button className="px-2 py-1 border rounded" onClick={() => openUsersModal(t)}>Usuários</button>
-                    <button className="px-2 py-1 border rounded text-red-600" onClick={async () => { if (confirm("Excluir?")) { await Admin.deleteTenant(t.id); await load(); } }}>Excluir</button>
+                    <Button variant="outline" onClick={() => setEditing(t)}>Editar</Button>
+                    <Button variant="ghost" onClick={() => openUsersModal(t)}>Usuários</Button>
+                    <Button
+                      variant="destructive"
+                      onClick={async () => {
+                        const ok = await confirm({ title: "Excluir tenant", description: `Confirma a exclusão de ${t.name}?`, confirmText: "Excluir", cancelText: "Cancelar" });
+                        if (!ok) return;
+                        await Admin.deleteTenant(t.id);
+                        await load();
+                      }}
+                    >Excluir</Button>
                   </td>
                 </tr>
               ))}
@@ -171,24 +192,24 @@ export default function AdminTenantsPage() {
               <textarea name="notes" placeholder="Observações" defaultValue={editing.notes} className="w-full border rounded p-2 min-h-20" />
             </div>
 
-            {/* Admin (somente no cadastro) */}
+            {/* Admin (somente no cadastro). Senha não é mais enviada; acesso será o CNPJ */}
             {!editing.id && (
               <div className="mt-4">
                 <div className="text-sm font-medium mb-2">Administrador da empresa</div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   <input name="adminName" placeholder="Nome do admin" className="w-full border rounded p-2" />
                   <input name="adminEmail" placeholder="Email do admin" className="w-full border rounded p-2" />
-                  <input name="adminPassword" type="password" placeholder="Senha do admin" className="w-full border rounded p-2" />
                   <input name="adminCpf" placeholder="CPF do admin" className="w-full border rounded p-2" onInput={(e: any) => { e.target.value = maskCPF(e.target.value); }} />
                   <input name="adminPhone" placeholder="Telefone do admin" className="w-full border rounded p-2" onInput={(e: any) => { e.target.value = maskPhone(e.target.value); }} />
                   <input name="adminAddress" placeholder="Endereço do admin" className="w-full border rounded p-2 lg:col-span-2" />
                 </div>
+                <div className="text-xs text-muted-foreground mt-2">O login de acesso do admin será definido automaticamente como o CNPJ informado.</div>
               </div>
             )}
 
             <div className="flex justify-end gap-2 mt-4">
-              <button type="button" className="px-3 py-2 border rounded" onClick={() => setEditing(null)}>Cancelar</button>
-              <button type="submit" className="px-3 py-2 border rounded bg-black text-white">Salvar</button>
+              <Button type="button" variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
+              <Button type="submit" loading={saving} loadingText="Salvando...">Salvar</Button>
             </div>
           </form>
         </div>
