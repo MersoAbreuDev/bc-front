@@ -14,7 +14,6 @@ export default function CategoriasPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, active: 0, topCategory: null as null | { name: string; qty: number } });
 
-  // pagination
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
@@ -31,7 +30,6 @@ export default function CategoriasPage() {
       const total = list.length;
       const active = list.filter((c) => c.active !== false).length;
 
-      // compute top category from comandas
       const comandas = await listComandas();
       const products = await ProdutosService.listProducts();
       const catSales: Record<string, number> = {};
