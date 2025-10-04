@@ -24,7 +24,7 @@ import { getCurrentUser } from "@/services/auth/api";
 
 function getApiBase(): string {
   const base = import.meta.env.VITE_API_URL || "http://localhost:5337"
-  return String(base || "http://localhost:5337").replace(/\/$/, "");
+  return "https://api.bcomandas.com.br";
 }
 
 function getTenantId(): string | undefined {

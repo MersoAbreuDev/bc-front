@@ -4,15 +4,12 @@ import { getCurrentUser } from "@/services/auth/api";
 
 function getApiBase(): string {
   const base = import.meta.env.VITE_API_URL || "http://localhost:5337"
-  return String(base || "http://localhost:5337").replace(/\/$/, "");
+  return "https://api.bcomandas.com.br";
 }
 
 function getTenantId(): string | undefined {
-  const user = getCurrentUser() as any;
-  const fromUser = user?.tenantId || user?.tenant?.id;
   const fromEnv = (import.meta as any)?.env?.VITE_TENANT_ID as string | undefined;
-  const fromStorage = (typeof localStorage !== "undefined" ? localStorage.getItem("bcomandas:tenantId") || localStorage.getItem("tenantId") : null) || undefined;
-  return fromUser || fromStorage || fromEnv;
+  return fromEnv;
 }
 
 async function apiGet<T = any>(path: string): Promise<{ ok: boolean; status: number; data?: T; message?: string }>{
