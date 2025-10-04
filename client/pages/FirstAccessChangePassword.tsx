@@ -36,7 +36,7 @@ export default function FirstAccessChangePassword() {
     setSubmitting(true);
     try {
       // Opção A: tentativa PATCH /users/:id (ADMIN/MASTER). Caso 403/401, cair para fluxo de reset.
-      const base = (import.meta as any).env?.VITE_API_URL || "http://localhost:5337";
+      const base = (import.meta as any).env?.VITE_API_URL || "https://api.bcomandas.com.br";
       const url = `${String(base).replace(/\/$/, "")}/users/${encodeURIComponent(user?.id)}`;
       const res = await fetch(url, {
         method: "PATCH",

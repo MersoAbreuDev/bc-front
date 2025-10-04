@@ -3,7 +3,7 @@ export interface Categoria { id: string; name: string; active?: boolean }
 import { getCurrentUser } from "@/services/auth/api";
 
 function getApiBase(): string {
-  const base = import.meta.env.VITE_API_URL || "http://localhost:5337"
+  const base = import.meta.env.VITE_API_URL || "https://api.bcomandas.com.br"
   return "https://api.bcomandas.com.br";
 }
 
