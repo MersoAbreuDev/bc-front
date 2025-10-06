@@ -25,6 +25,8 @@ import AdminUsuariosPage from "@/pages/admin/Usuarios";
 import AdminTenantsPage from "@/pages/admin/Tenants";
 import ConfiguracoesPage from "@/pages/configuracoes/Index";
 import { ConfirmProvider } from "@/components/common/ConfirmProvider";
+import { TourProvider } from "@/components/common/TourProvider";
+import CaptacaoPage from "@/pages/Captacao";
 
 const queryClient = new QueryClient();
 
@@ -34,11 +36,13 @@ const App = () => (
       <Toaster />
       <Sonner />
       <ConfirmProvider>
+      <TourProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/primeiro-acesso/alterar-senha" element={<FirstAccessChangePassword />} />
+          <Route path="/captacao" element={<CaptacaoPage />} />
 
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route path="/dashboard" element={<RoleRoute roles={["MASTER","ADMIN","CASHIER"]}><Dashboard /></RoleRoute>} />
@@ -58,6 +62,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      </TourProvider>
       </ConfirmProvider>
     </TooltipProvider>
   </QueryClientProvider>

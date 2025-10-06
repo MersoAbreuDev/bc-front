@@ -55,7 +55,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
 
         <nav className="mt-6 flex flex-col gap-2">
           {navItems.map((item) => (
-            <NavLink key={item.to} to={item.to} className={({ isActive }) => `flex items-center gap-3 p-3 rounded-md hover:bg-[#ffecd6] ${isActive ? 'bg-[#ffecd6]' : ''}`}>
+            <NavLink key={item.to} to={item.to} data-tour={`nav-${item.label.toLowerCase().replace(/\s+/g,'-')}`} className={({ isActive }) => `flex items-center gap-3 p-3 rounded-md hover:bg-[#ffecd6] ${isActive ? 'bg-[#ffecd6]' : ''}`}>
               <div className={`flex items-center justify-center ${collapsed ? 'w-full' : 'w-8'}`}>{item.icon}</div>
               <div className={`${collapsed ? 'hidden' : 'block'} text-sm`}>{item.label}</div>
             </NavLink>
