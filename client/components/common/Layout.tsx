@@ -71,6 +71,10 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
                 <div className={`flex items-center justify-center ${collapsed ? 'w-full' : 'w-8'}`}><ClipboardList className="w-5 h-5" /></div>
                 <div className={`${collapsed ? 'hidden' : 'block'} text-sm`}>Usuários</div>
               </NavLink>
+              <NavLink to="/admin/leads" className={({ isActive }) => `flex items-center gap-3 p-3 rounded-md hover:bg-[#ffecd6] ${isActive ? 'bg-[#ffecd6]' : ''}`}>
+                <div className={`flex items-center justify-center ${collapsed ? 'w-full' : 'w-8'}`}><ClipboardList className="w-5 h-5" /></div>
+                <div className={`${collapsed ? 'hidden' : 'block'} text-sm`}>Leads</div>
+              </NavLink>
               <NavLink to="/admin/tenants" className={({ isActive }) => `flex items-center gap-3 p-3 rounded-md hover:bg-[#ffecd6] ${isActive ? 'bg-[#ffecd6]' : ''}`}>
                 <div className={`flex items-center justify-center ${collapsed ? 'w-full' : 'w-8'}`}><Layers className="w-5 h-5" /></div>
                 <div className={`${collapsed ? 'hidden' : 'block'} text-sm`}>Tenants</div>

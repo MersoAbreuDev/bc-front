@@ -56,6 +56,31 @@ export async function registerTenant(body: any) {
   return r.data;
 }
 
+// Leads (MASTER)
+export async function listLeads(): Promise<any[]> {
+  const r = await api<any[]>(`/leads`, { method: "GET" });
+  if (!r.ok) throw new Error(r.message);
+  return r.data || [];
+}
+
+export async function approveLead(id: string): Promise<any> {
+  const r = await api<any>(`/leads/${encodeURIComponent(id)}/approve`, { method: "POST" });
+  if (!r.ok) throw new Error(r.message);
+  return r.data;
+}
+
+export async function rejectLead(id: string, reason?: string): Promise<any> {
+  const r = await api<any>(`/leads/${encodeURIComponent(id)}/reject`, { method: "POST", body: JSON.stringify({ reason }) });
+  if (!r.ok) throw new Error(r.message);
+  return r.data;
+}
+
+export async function updateLead(id: string, payload: any): Promise<any> {
+  const r = await api<any>(`/leads/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) });
+  if (!r.ok) throw new Error(r.message);
+  return r.data;
+}
+
 // Extra tenants endpoints (opcionais)
 export async function tenantsStatistics() { const r = await api<any>(`/tenants/statistics`, { method: "GET" }); if (!r.ok) throw new Error(r.message); return r.data; }
 export async function tenantsSearch(q: string) { const r = await api<any[]>(`/tenants/search?q=${encodeURIComponent(q)}`, { method: "GET" }); if (!r.ok) throw new Error(r.message); return r.data || []; }

@@ -23,6 +23,7 @@ import RoleRoute from "@/components/common/RoleRoute";
 import AdminHome from "@/pages/admin/Index";
 import AdminUsuariosPage from "@/pages/admin/Usuarios";
 import AdminTenantsPage from "@/pages/admin/Tenants";
+import AdminLeadsPage from "@/pages/admin/Leads";
 import ConfiguracoesPage from "@/pages/configuracoes/Index";
 import { ConfirmProvider } from "@/components/common/ConfirmProvider";
 import { TourProvider } from "@/components/common/TourProvider";
@@ -53,6 +54,7 @@ const App = () => (
             <Route path="/relatorios" element={<RoleRoute roles={["MASTER","ADMIN"]}><RelatoriosPage /></RoleRoute>} />
             <Route path="/admin" element={<RoleRoute roles={["MASTER"]}><AdminHome /></RoleRoute>} />
             <Route path="/admin/usuarios" element={<RoleRoute roles={["MASTER"]}><AdminUsuariosPage /></RoleRoute>} />
+            <Route path="/admin/leads" element={<RoleRoute roles={["MASTER"]}><AdminLeadsPage /></RoleRoute>} />
             <Route path="/admin/tenants" element={<RoleRoute roles={["MASTER"]}><AdminTenantsPage /></RoleRoute>} />
             <Route path="/configuracoes" element={<RoleRoute roles={["MASTER","ADMIN"]}><ConfiguracoesPage /></RoleRoute>} />
             <Route path="/qr" element={<QrCodePage />} />
