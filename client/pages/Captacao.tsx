@@ -52,23 +52,18 @@ export default function CaptacaoPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          source: "landing-captacao",
-          // responsável
-          responsible: {
-            name,
-            email,
-            phone,
-            address: responsavelAddress,
-          },
-          // empresa
-          company: {
-            tradeName: company,
-            corporateName,
-            cnpj,
-            stateRegistration: ie,
-            address: companyAddress,
-            industry,
-          },
+          cnpj,
+          stateRegistration: ie,
+          address: companyAddress,
+          corporateName,
+          tradeName: company,
+          industry,
+          adminName: name,
+          adminEmail: email,
+          adminPhone: phone,
+          adminAddress: responsavelAddress,
+          adminCpf: "",
+          notes: "source=landing-captacao",
         }),
       });
       if (!res.ok) {
